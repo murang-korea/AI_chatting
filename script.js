@@ -1,20 +1,25 @@
 const chat = document.getElementById("chat");
 const messageInput = document.getElementById("message");
+const sendBtn = document.getElementById("sendBtn");
+
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
 
 async function sendMessage() {
-  const userMessage = messageInput.value.trim();
-  if (!userMessage) return;
+  const text = messageInput.value.trim();
+  if (!text) return;
 
-  addMessage("user", userMessage);
+  addMessage("user", text);
   messageInput.value = "";
-
   addMessage("bot", "생각 중...");
 
   try {
     const res = await fetch("/.netlify/functions/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: userMessage })
+      body: JSON.stringify({ text })
     });
 
     const data = await res.json();
