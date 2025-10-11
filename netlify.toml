@@ -1,0 +1,21 @@
+export async function handler(event) {
+  const body = JSON.parse(event.body);
+  const userText = body.text;
+
+  const response = await fetch("https://api-inference.huggingface.co/models/gpt2", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + process.env.HF_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ inputs: userText })
+  });
+
+  const result = await response.json();
+  const reply = result?.[0]?.generated_text || "응답 실패";
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ reply })
+  };
+}
