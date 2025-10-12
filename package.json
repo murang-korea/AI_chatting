@@ -10,5 +10,4 @@
   "scripts": {
     "start": "node server.js"
   }
-}  chat.scrollTop = chat.scrollHeight;
 }
