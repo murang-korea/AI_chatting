@@ -1,19 +1,53 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 채팅</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="chat">
-    <div id="messages"></div>
-    <div id="inputArea">
-      <input type="text" id="message" placeholder="메시지를 입력하세요..." autocomplete="off">
-      <button id="sendBtn">전송</button>
-    </div>
+  <div id="chat"></div>
+  <div id="inputArea">
+    <input id="message" placeholder="메시지를 입력하세요" />
+    <button id="sendBtn">전송</button>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("message");
+    const sendBtn = document.getElementById("sendBtn");
+
+    async function sendMessage() {
+      const userMsg = input.value.trim();
+      if (!userMsg) return;
+
+      chat.innerHTML += `<div class="user">🧑‍💬 ${userMsg}</div>`;
+      input.value = "";
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMsg }),
+        });
+
+        if (!res.ok) throw new Error("서버 오류");
+
+        const data = await res.json();
+        chat.innerHTML += `<div class="bot">🤖 ${data.reply}</div>`;
+      } catch (err) {
+        chat.innerHTML += `<div class="bot error">⚠️ 서버와 연결 실패</div>`;
+      }
+
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
 </body>
 </html>
