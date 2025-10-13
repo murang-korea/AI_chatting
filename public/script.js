@@ -1,40 +1,34 @@
-const messages = document.getElementById("messages");
-const input = document.getElementById("message");
-const sendBtn = document.getElementById("sendBtn");
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("user-input");
+  const messages = document.getElementById("chat-messages");
 
-sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+
+    const userDiv = document.createElement("div");
+    userDiv.textContent = "👤 " + message;
+    messages.appendChild(userDiv);
+
+    input.value = "";
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await res.json();
+      const botDiv = document.createElement("div");
+      botDiv.textContent = "🤖 " + (data.reply || data.error);
+      messages.appendChild(botDiv);
+    } catch (err) {
+      const errDiv = document.createElement("div");
+      errDiv.textContent = "❌ 서버 오류: " + err.message;
+      messages.appendChild(errDiv);
+    }
+  });
 });
-
-async function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
-
-  addMessage(text, "user");
-  input.value = "";
-
-  const thinking = addMessage("생각 중...", "bot");
-
-  try {
-    const res = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
-    });
-
-    const data = await res.json();
-    thinking.textContent = data.reply;
-  } catch {
-    thinking.textContent = "⚠️ 서버와 연결할 수 없어요.";
-  }
-}
-
-function addMessage(text, sender) {
-  const div = document.createElement("div");
-  div.classList.add("message", sender);
-  div.textContent = text;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-  return div;
-}
