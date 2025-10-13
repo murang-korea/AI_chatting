@@ -1,3 +1,5 @@
+console.log("🔑 HF_API_KEY:", HF_API_KEY ? "Loaded" : "Missing");
+
 import express from "express";
 import fetch from "node-fetch";
 import path from "path";
