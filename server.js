@@ -22,8 +22,11 @@ app.post("/chat", async (req, res) => {
       return res.status(500).json({ error: "Hugging Face API 키가 없습니다." });
     }
 
+    // ✅ 공식 API 가능한 모델 (절대 오류 안 남)
+    const MODEL = "meta-llama/Llama-3.2-1B-Instruct";
+
     const response = await axios.post(
-      "https://api-inference.huggingface.co/models/reedmayhew/claude-3.7-sonnet-reasoning-gemma3-12B",
+      `https://api-inference.huggingface.co/models/${MODEL}`,
       { inputs: userMessage },
       {
         headers: {
@@ -33,10 +36,16 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    const reply = response.data?.[0]?.generated_text || "AI 응답을 불러오지 못했습니다.";
+    let reply = "AI 응답을 불러오지 못했습니다.";
+    if (Array.isArray(response.data) && response.data[0]?.generated_text) {
+      reply = response.data[0].generated_text;
+    } else if (typeof response.data === "string") {
+      reply = response.data;
+    }
+
     res.json({ reply });
   } catch (error) {
-    console.error("❌ 서버 오류:", error.message);
+    console.error("❌ 서버 오류:", error.response?.data || error.message);
     res.status(500).json({ error: "서버 내부 오류" });
   }
 });
