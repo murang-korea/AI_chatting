@@ -1,34 +1,35 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("chat-form");
-  const input = document.getElementById("user-input");
-  const messages = document.getElementById("chat-messages");
+const chatDiv = document.getElementById("chat");
+const messageInput = document.getElementById("message");
+const sendBtn = document.getElementById("sendBtn");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const message = input.value.trim();
-    if (!message) return;
+function addMessage(content, className) {
+  const msgDiv = document.createElement("div");
+  msgDiv.textContent = content;
+  msgDiv.className = className;
+  chatDiv.appendChild(msgDiv);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+}
 
-    const userDiv = document.createElement("div");
-    userDiv.textContent = "👤 " + message;
-    messages.appendChild(userDiv);
+async function sendMessage() {
+  const msg = messageInput.value.trim();
+  if (!msg) return;
+  addMessage(msg, "user");
+  messageInput.value = "";
 
-    input.value = "";
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg }),
+    });
+    const data = await res.json();
+    addMessage(data.reply || "응답 없음", "bot");
+  } catch {
+    addMessage("서버 오류 발생", "bot");
+  }
+}
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
-
-      const data = await res.json();
-      const botDiv = document.createElement("div");
-      botDiv.textContent = "🤖 " + (data.reply || data.error);
-      messages.appendChild(botDiv);
-    } catch (err) {
-      const errDiv = document.createElement("div");
-      errDiv.textContent = "❌ 서버 오류: " + err.message;
-      messages.appendChild(errDiv);
-    }
-  });
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
 });
