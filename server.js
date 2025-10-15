@@ -1,11 +1,10 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000;
 
 app.use(express.static("public"));
 app.use(express.json());
@@ -22,8 +21,8 @@ app.post("/chat", async (req, res) => {
       return res.status(500).json({ error: "Hugging Face API 키가 없습니다." });
     }
 
-    // ✅ 공식 API 가능한 모델 (절대 오류 안 남)
-    const MODEL = "meta-llama/Llama-3.2-1B-Instruct";
+    // 예: API 가능한 모델로 교체
+    const MODEL = "HuggingFaceTB/smoilLM3-3B";
 
     const response = await axios.post(
       `https://api-inference.huggingface.co/models/${MODEL}`,
@@ -31,12 +30,13 @@ app.post("/chat", async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
 
-    let reply = "AI 응답을 불러오지 못했습니다.";
+    // 응답 처리
+    let reply = "응답 없음";
     if (Array.isArray(response.data) && response.data[0]?.generated_text) {
       reply = response.data[0].generated_text;
     } else if (typeof response.data === "string") {
@@ -55,5 +55,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ 서버가 ${PORT} 포트에서 실행 중`);
+  console.log(`✅ 서버 실행 중: 포트 ${PORT}`);
 });
