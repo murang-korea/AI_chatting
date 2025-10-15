@@ -54,6 +54,7 @@ app.get("/", (req, res) => {
   res.sendFile("index.html", { root: "public" });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ 서버 실행 중: 포트 ${PORT}`);
+const PORT = process.env.PORT || 10000; // 이 줄 유지
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ 서버가 ${PORT} 포트에서 실행 중`);
 });
