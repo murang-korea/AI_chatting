@@ -22,7 +22,7 @@ app.post("/chat", async (req, res) => {
     }
 
     // 예: API 가능한 모델로 교체
-    const MODEL = "https://api-inference.huggingface.co/models/gpt2";
+    const MODEL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
 
     const response = await axios.post(
       `https://api-inference.huggingface.co/models/${MODEL}`,
