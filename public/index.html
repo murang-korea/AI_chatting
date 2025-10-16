@@ -2,55 +2,110 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 채팅</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Chat</title>
+  <style>
+    body {
+      font-family: "Noto Sans KR", sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #f5f6fa;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
+    .user, .bot {
+      margin: 10px 0;
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .user {
+      background: #007bff;
+      color: white;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+    .bot {
+      background: #eee;
+      color: #333;
+      align-self: flex-start;
+      margin-right: auto;
+    }
+    #inputArea {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+      border-top: 1px solid #ddd;
+    }
+    #message {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    #sendBtn {
+      margin-left: 10px;
+      padding: 10px 14px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div id="chat"></div>
   <div id="inputArea">
-    <input type="text" id="message" placeholder="메시지를 입력하세요..." />
+    <input id="message" type="text" placeholder="메시지를 입력하세요..." />
     <button id="sendBtn">전송</button>
   </div>
 
   <script>
     const chat = document.getElementById("chat");
-    const sendBtn = document.getElementById("sendBtn");
     const messageInput = document.getElementById("message");
+    const sendBtn = document.getElementById("sendBtn");
 
-    sendBtn.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
-    });
+    function addMessage(content, sender) {
+      const div = document.createElement("div");
+      div.textContent = content;
+      div.className = sender;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
     async function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-
-      appendMessage("user", text);
+      const message = messageInput.value.trim();
+      if (!message) return;
+      addMessage(message, "user");
       messageInput.value = "";
 
       try {
         const res = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text }),
+          body: JSON.stringify({ message }),
         });
-
         const data = await res.json();
-        appendMessage("bot", data.reply || data.error || "응답 없음");
-      } catch {
-        appendMessage("bot", "서버 오류");
+        addMessage(data.reply || "응답 오류", "bot");
+      } catch (err) {
+        addMessage("⚠️ 서버 오류", "bot");
       }
     }
 
-    function appendMessage(sender, text) {
-      const msg = document.createElement("div");
-      msg.className = sender;
-      msg.textContent = text;
-      chat.appendChild(msg);
-      chat.scrollTop = chat.scrollHeight;
-    }
+    sendBtn.onclick = sendMessage;
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
   </script>
 </body>
 </html>
