@@ -6,33 +6,34 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+const HF_API_KEY = process.env.HF_API_KEY;
 
-// ✅ public 폴더 정적 파일 서빙
 app.use(express.static("public"));
 app.use(express.json());
 
-// ✅ Hugging Face API 엔드포인트
-const HF_MODEL_URL = "https://api-inference.huggingface.co/models/klue/bert-base";
-const HF_API_KEY = process.env.HF_API_KEY;
-
-if (!HF_API_KEY) {
-  console.error("🚨 환경 변수 HF_API_KEY가 설정되지 않았습니다!");
-}
-
-// ✅ 채팅 요청 처리
+// 🧠 채팅 요청 처리
 app.post("/chat", async (req, res) => {
   try {
-    const userMessage = req.body.message?.trim();
+    const userMessage = req.body.message;
 
     if (!userMessage) {
-      return res.status(400).json({ error: "❌ 메시지가 비어 있습니다." });
+      return res.status(400).json({ error: "메시지가 비어 있습니다." });
     }
 
-    console.log(`📩 사용자 입력: ${userMessage}`);
+    if (!HF_API_KEY) {
+      return res.status(500).json({ error: "Hugging Face API 키가 없습니다." });
+    }
 
     const response = await axios.post(
-      HF_MODEL_URL,
-      { inputs: userMessage },
+      "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct",
+      {
+        inputs: userMessage,
+        parameters: {
+          max_new_tokens: 200,
+          temperature: 0.8,
+          return_full_text: false,
+        },
+      },
       {
         headers: {
           Authorization: `Bearer ${HF_API_KEY}`,
@@ -41,38 +42,24 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    console.log("✅ Hugging Face 응답:", response.data);
-
-    // 모델 형식에 따라 다름
+    // ✅ Hugging Face 응답 파싱
     const reply =
-      response.data?.[0]?.generated_text ||
+      response.data[0]?.generated_text ||
       response.data?.generated_text ||
-      JSON.stringify(response.data);
+      "AI 응답을 불러오지 못했습니다.";
 
     res.json({ reply });
   } catch (error) {
-    console.error("❌ 서버 오류 상세:", {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-    });
-    res.status(500).json({
-      error:
-        error.response?.data?.error ||
-        error.response?.data ||
-        error.message ||
-        "서버 내부 오류",
-    });
+    console.error("❌ 서버 오류:", error.response?.data || error.message);
+    res.status(500).json({ error: "서버 내부 오류" });
   }
 });
 
-// ✅ 기본 라우트 (index.html 서빙)
+// 기본 페이지 라우트
 app.get("/", (req, res) => {
   res.sendFile("index.html", { root: "public" });
 });
 
-// ✅ 서버 실행
 app.listen(PORT, () => {
-  console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
-  console.log(`🔑 HF_API_KEY: ${HF_API_KEY ? "✅ 로드됨" : "❌ 없음"}`);
+  console.log(`✅ 서버가 ${PORT} 포트에서 실행 중`);
 });
