@@ -1,33 +1,37 @@
-// server.js
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import path from "path";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const HF_API_KEY = process.env.HF_API_KEY;
 
-// ✅ Hugging Face API 키 체크
-if (!HF_API_KEY) {
-  console.error("❌ Hugging Face API 키가 없습니다. .env 또는 Render 환경 변수 확인");
-  process.exit(1);
-}
-
-// 정적 파일 서비스
-app.use(express.static(path.join(process.cwd(), "public")));
+// ✅ public 폴더 정적 파일 서빙
+app.use(express.static("public"));
 app.use(express.json());
 
-// 챗 요청 처리
+// ✅ Hugging Face API 엔드포인트
+const HF_MODEL_URL = "https://api-inference.huggingface.co/models/klue/bert-base";
+const HF_API_KEY = process.env.HF_API_KEY;
+
+if (!HF_API_KEY) {
+  console.error("🚨 환경 변수 HF_API_KEY가 설정되지 않았습니다!");
+}
+
+// ✅ 채팅 요청 처리
 app.post("/chat", async (req, res) => {
   try {
-    const userMessage = req.body.message;
-    if (!userMessage) return res.status(400).json({ error: "메시지가 비어 있습니다." });
+    const userMessage = req.body.message?.trim();
+
+    if (!userMessage) {
+      return res.status(400).json({ error: "❌ 메시지가 비어 있습니다." });
+    }
+
+    console.log(`📩 사용자 입력: ${userMessage}`);
 
     const response = await axios.post(
-      "https://api-inference.huggingface.co/models/KLUE/klue-bert-base", // 원하는 모델 URL로 변경
+      HF_MODEL_URL,
       { inputs: userMessage },
       {
         headers: {
@@ -37,21 +41,38 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    // 모델 응답 가져오기
-    const reply = response.data?.[0]?.generated_text || "AI 응답을 불러오지 못했습니다.";
+    console.log("✅ Hugging Face 응답:", response.data);
+
+    // 모델 형식에 따라 다름
+    const reply =
+      response.data?.[0]?.generated_text ||
+      response.data?.generated_text ||
+      JSON.stringify(response.data);
+
     res.json({ reply });
   } catch (error) {
-    console.error("❌ 서버 오류:", error.message);
-    res.status(500).json({ error: "서버 내부 오류" });
+    console.error("❌ 서버 오류 상세:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    res.status(500).json({
+      error:
+        error.response?.data?.error ||
+        error.response?.data ||
+        error.message ||
+        "서버 내부 오류",
+    });
   }
 });
 
-// index.html 반환
+// ✅ 기본 라우트 (index.html 서빙)
 app.get("/", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "public", "index.html"));
+  res.sendFile("index.html", { root: "public" });
 });
 
-// 서버 시작
+// ✅ 서버 실행
 app.listen(PORT, () => {
-  console.log(`✅ 서버가 ${PORT} 포트에서 실행 중`);
+  console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
+  console.log(`🔑 HF_API_KEY: ${HF_API_KEY ? "✅ 로드됨" : "❌ 없음"}`);
 });
